@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group 'org.springframework'
+version '5.1.12.BUILD-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile(project(":spring-core"))
+    compile(project(":spring-context"))
+    compile(project(":spring-web"))
+    compile(project(":spring-webmvc"))
+    compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-core', version: '8.5.47'
+    compile group: 'org.apache.tomcat.embed', name: 'tomcat-embed-jasper', version: '8.5.47'
+    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.62'
+    optional("javax.servlet:javax.servlet-api:3.1.0")
+    compile group: 'commons-fileupload', name: 'commons-fileupload', version: '1.4'
+}
