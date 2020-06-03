@@ -82,6 +82,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * of a {@code BeanDefinitionRegistry}
 	 */
 	public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry) {
+		// useDefaultFilters 使用默认的 filters
 		this(registry, true);
 	}
 
@@ -110,6 +111,8 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * @see #setEnvironment
 	 */
 	public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean useDefaultFilters) {
+		// useDefaultFilters 表示是否使用默认的扫描过滤器
+		// 如果使用默认的过滤器，那么 spring 会自动扫描到 @Component，@Service，@Controller，@Repository ...
 		this(registry, useDefaultFilters, getOrCreateEnvironment(registry));
 	}
 
@@ -281,7 +284,7 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
 		for (String basePackage : basePackages) {
 
-			// 关键代码，完成扫描
+			// ★★★ 关键代码，完成扫描
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 
 			for (BeanDefinition candidate : candidates) {

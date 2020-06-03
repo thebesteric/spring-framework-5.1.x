@@ -153,8 +153,8 @@ public class ProxyConfig implements Serializable {
 	 */
 	public void copyFrom(ProxyConfig other) {
 		Assert.notNull(other, "Other ProxyConfig object must not be null");
-		this.proxyTargetClass = other.proxyTargetClass;
-		this.optimize = other.optimize;
+		this.proxyTargetClass = other.proxyTargetClass; // 是否强制使用 CGLIB
+		this.optimize = other.optimize; // 是否优化
 		this.exposeProxy = other.exposeProxy;
 		this.frozen = other.frozen;
 		this.opaque = other.opaque;

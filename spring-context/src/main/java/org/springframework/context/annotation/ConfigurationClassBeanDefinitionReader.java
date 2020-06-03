@@ -137,11 +137,16 @@ class ConfigurationClassBeanDefinitionReader {
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
+
+		// ★★★ 从配置类中寻找 @Bean 方法，并实例化为 ConfigurationClassBeanDefinition BD，放入 BD map 中
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
+		// 处理 ImportResource
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		// ★★★ 处理继承了 ImportBeanDefinitionRegistrar 的 bd
+		// 新版的 mybatis 就是利用 ImportBeanDefinitionRegistrar 来实现扫描 Mapper Bean
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
@@ -361,6 +366,7 @@ class ConfigurationClassBeanDefinitionReader {
 
 	private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
 		registrars.forEach((registrar, metadata) ->
+				// 调用 ImportBeanDefinitionRegistrar 的 registerBeanDefinitions 方法
 				registrar.registerBeanDefinitions(metadata, this.registry));
 	}
 

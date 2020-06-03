@@ -91,7 +91,12 @@ abstract class ConfigurationClassUtils {
 		一个配置类的 db 类型，就是 AnnotatedGenericBeanDefinition extends GenericBeanDefinition implement AnnotatedBeanDefinition
 		通常 AnnotatedBeanDefinition 类型的类，就是一个配置类，因为 Spring 会将配置类写死为 AnnotatedGenericBeanDefinition
 
-		AnnotatedBeanDefinition 的实现类有三个，AnnotatedGenericBeanDefinition，ConfigurationClassBeanDefinition，ScannedGenericBeanDefinition
+		★★★ AnnotatedBeanDefinition 的实现类有三个，AnnotatedGenericBeanDefinition，ConfigurationClassBeanDefinition，ScannedGenericBeanDefinition
+
+		就是判断 beanDef 是不是一个配置类，所以也解释了 @Component 里为什么也可以写 @Bean
+		因为 @Component 是一个 ScannedGenericBeanDefinition，他是 AnnotatedBeanDefinition 的子类
+
+		而开天辟地的 5 BD 都是 RootBeanDefinition，所以是不会进行解析的
 		 */
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
@@ -119,11 +124,11 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
-		// 判断是不是一个 加了 @Configuration 的注解类
+		// 判断是不是一个 加了 @Configuration 的注解类，此时就是一个 full 配置类
 		if (isFullConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
-		// 判断是不是一个 没加 @Configuration 的注解类
+		// 判断是不是一个 没加 @Configuration 的注解类，此时就是一个 lite 配置类
 		else if (isLiteConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}

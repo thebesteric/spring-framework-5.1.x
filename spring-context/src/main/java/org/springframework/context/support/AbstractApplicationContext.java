@@ -521,19 +521,22 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			// 添加 ApplicationContextAwareProcessor，ApplicationListenerDetector
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
-				// 执行 BeanFactoryPostProcessors
-				// 完成了 bean 扫描 和 解析（类 --> beanDefinition）
+				// ★★★ 执行 BeanFactoryPostProcessors
+				// ★★★ 完成了 bean 扫描(scan) 和 解析(parse)（类 --> beanDefinition），无论是单例还是原型的 bean 都会放到 beanDefinitionMap 中
+				// 这里的解析，包括解析配置类，通过配置类获取需要扫描的包路径
 				// 这里也会完成第一次合并
 				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				// 添加 BeanPostProcessorChecker 后置处理器
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
@@ -549,7 +552,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
-				// 开始实例化所有 非懒加载的单例 类，validate 和 life
+				// 开始实例化所有 非懒加载的单例 类，走了 validate 和 life 生命周期的两个步骤
 				// 这行代码执行完毕后，singletonObjects 里面就会有实例化好的对象实例
 				finishBeanFactoryInitialization(beanFactory);
 
@@ -712,7 +715,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
 		// 关键代码：getBeanFactoryPostProcessors() 正常情况下是空
-		// 除非手工通过 ac.addBeanFactoryPostProcessor() 添加
+		// 除非手工通过 ac.addBeanFactoryPostProcessor(xxx) 添加
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
@@ -885,7 +888,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.
-		// 实例化所有剩余的（非惰性初始化）单例对象
+		// 完成 BD 的合并，并实例化所有剩余的（非惰性初始化）单例对象
 		beanFactory.preInstantiateSingletons();
 	}
 

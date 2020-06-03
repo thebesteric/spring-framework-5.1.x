@@ -55,7 +55,7 @@ final class PostProcessorRegistrationDelegate {
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
-		// 1、会首先处理 BeanDefinitionRegistryPostProcessor 类
+		// 1、会首先处理内置的 BeanDefinitionRegistryPostProcessor 类
 		// 2、再会处理 BeanFactoryPostProcessor 类
 		// 为什么会执行处理这两种类？
 		// 因为 ConfigurationClassPostProcessor 继承了 BeanDefinitionRegistryPostProcessor
@@ -63,7 +63,7 @@ final class PostProcessorRegistrationDelegate {
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
 		Set<String> processedBeans = new HashSet<>();
 
-		// 如果是 BeanDefinitionRegistry 才会执行下面的代码
+		// 如果是 BeanDefinitionRegistry 才会执行下面的代码（保证了先执行内置的 BeanDefinitionRegistry 类）
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			// regularPostProcessors 里面存放的是 BeanFactoryPostProcessor
@@ -80,6 +80,7 @@ final class PostProcessorRegistrationDelegate {
 
 			// 方法调用时候传进来的 List<BeanFactoryPostProcessor>，一般情况下没有
 			// 这里如果是手动通过 API 直接提供 ac.addBeanFactoryPostProcessor(xxx) 才会有
+			// 所以 Spring 是先执行了由程序员提供的 BeanFactoryPostProcessor
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
@@ -109,14 +110,15 @@ final class PostProcessorRegistrationDelegate {
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
 			// 当前需要执行的 BeanDefinitionRegistryPostProcessor 集合
+			// 什么叫当前？因为 spring 使用了策略模式，不同的策略执行的时机不同
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
-			// 首先，先调用实现了 PriorityOrdered 接口的 BeanDefinitionRegistryPostProcessors
+			// ★★★ 首先，先调用实现了 PriorityOrdered 接口的 BeanDefinitionRegistryPostProcessors 所有子类
 			// 根据类型从 beanDefinitionMap 中找到名字
-			// 		因为此时未进行扫描，所以只有 spring 初始的 6 个 BD，所以后面还需要再进行 getBeanNamesForType
-			//		同时此时不能拿原始的 BD 去比较，必须先进行合并，应为可能有父类
-			// 这里地方只能找到一个 ConfigurationAnnotationProcessor
+			// 因为此时未进行扫描，所以只有 spring 初始的 6 个 BD，所以后面还需要再进行 getBeanNamesForType
+			// 同时此时不能拿原始的 BD 去比较，必须先进行合并，应为可能有父类
+			// 这里地方只能找到一个 internalConfigurationAnnotationProcessor
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 
@@ -136,19 +138,23 @@ final class PostProcessorRegistrationDelegate {
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			// 将所有的 bean 放入 registryProcessors 集合
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 执行 ConfigurationClassPostProcessor 的 postProcessBeanDefinitionRegistry 方法
+			// ★★★ 执行 ConfigurationClassPostProcessor 的 postProcessBeanDefinitionRegistry 方法
 			// 因为只有 ConfigurationClassPostProcessor 继承了 BeanDefinitionRegistryPostProcessor
 			// 该方法完成以后，所有的 bean 都会被扫描出来放入 beanDefinitionMap 中
+			// mybatis 就是通过这里入手，完成的扫描
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
-			// 清空当前需要执行的集合清空
+			// 清空当前需要执行的集合清空，也表示这一种策略执行完成了
 			currentRegistryProcessors.clear();
+
+
+			// ★★★ 此时已经经过扫描
+			// 此时第二次调用 getBeanNamesForType 可以拿到所有的 BD，同时完成了第一次的 BD 合并
+			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
 			// 接下来，调用实现了 Ordered 接口的 BeanDefinitionRegistryPostProcessors
-			// 此时经过扫描，所以 getBeanNamesForType 可以拿到所有的 BD
-			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
-				// 执行过的不会再执行了 并且 实现了 Ordered 接口
+				// 执行过的不会再执行了，并且 实现了 Ordered 接口
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
@@ -156,13 +162,15 @@ final class PostProcessorRegistrationDelegate {
 			}
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 执行的是 ConfigurationClassPostProcessor 的 postProcessBeanDefinitionRegistry
+			// ★★★ postProcessBeanDefinitionRegistry 方法
+			// ConfigurationClassPostProcessor 由于在上面执行过了，所以这里不会在执行
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
 			// 最终调用所有其他的 BeanDefinitionRegistryPostProcessors
 			// 即既没有实现 PriorityOrdered 也没有实现 Ordered 接口的 BeanDefinitionRegistryPostProcessors
+			// 这里就会找到 mybatis
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
@@ -177,7 +185,7 @@ final class PostProcessorRegistrationDelegate {
 				}
 				sortPostProcessors(currentRegistryProcessors, beanFactory);
 				registryProcessors.addAll(currentRegistryProcessors);
-				// 因为这个类可能还会扫描出来 其他的 BeanFactoryPostProcessor 类
+				// 因为 registry 还可能注册其他的 bd，所以这个类可能还会扫描出来其他的 BeanFactoryPostProcessor 类
 				invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 				currentRegistryProcessors.clear();
 			}
@@ -189,12 +197,12 @@ final class PostProcessorRegistrationDelegate {
 			2、Spring 自己内置的
 			3、手动往 beanDefinitionMap 中 put 的
 
-			现在开始执行所有 实现了 BeanDefinitionRegistryPostProcessor 接口的父类的 BeanFactoryPostProcessor 的 postProcessBeanFactory 方法
+			★★★ 现在开始执行所有 实现了 BeanDefinitionRegistryPostProcessor 接口的父类的 BeanFactoryPostProcessor 的 postProcessBeanFactory 方法
 			也就是 BeanFactoryPostProcessor 的 postProcessBeanFactory 方法
-			同时也完成了 对 AppConfig 的 CGLIB 动态代理
+			★★★ 同时也完成了对 AppConfig 的 CGLIB 动态代理
 			 */
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
-			// 执行所有 直接实现了 BeanFactoryPostProcessor 接口的 postProcessBeanFactory 方法
+			// ★ 执行所有 直接实现了 BeanFactoryPostProcessor 接口的 postProcessBeanFactory 方法
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
 
@@ -266,7 +274,7 @@ final class PostProcessorRegistrationDelegate {
 		// a bean is not eligible for getting processed by all BeanPostProcessors.
 		int beanProcessorTargetCount = beanFactory.getBeanPostProcessorCount() + 1 + postProcessorNames.length;
 
-		// 添加 BeanPostProcessor
+		// 添加 BeanPostProcessor - BeanPostProcessorChecker
 		beanFactory.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, beanProcessorTargetCount));
 
 		// Separate between BeanPostProcessors that implement PriorityOrdered,

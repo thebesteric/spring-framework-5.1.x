@@ -40,6 +40,8 @@ import org.springframework.lang.Nullable;
 public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	/**
+	 * 单例
+	 *
 	 * Scope identifier for the standard singleton scope: "singleton".
 	 * <p>Note that extended bean factories might support further scopes.
 	 * @see #setScope
@@ -47,6 +49,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	String SCOPE_SINGLETON = ConfigurableBeanFactory.SCOPE_SINGLETON;
 
 	/**
+	 * 原型
+	 *
 	 * Scope identifier for the standard prototype scope: "prototype".
 	 * <p>Note that extended bean factories might support further scopes.
 	 * @see #setScope
@@ -55,6 +59,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 
 	/**
+	 * 权限
+	 *
 	 * Role hint indicating that a {@code BeanDefinition} is a major part
 	 * of the application. Typically corresponds to a user-defined bean.
 	 */
@@ -240,6 +246,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	ConstructorArgumentValues getConstructorArgumentValues();
 
 	/**
+	 * 判断构造方法有没有传值
+	 *
 	 * Return if there are constructor argument values defined for this bean.
 	 * @since 5.0.2
 	 */
@@ -248,7 +256,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	}
 
 	/**
-	 * 设置 setter 方法的值
+	 * 对应 XML 中的 property 标签对应的值
+	 * 对应 bean 中的属性，需要提供 setter 方法
 	 *
 	 * Return the property values to be applied to a new instance of the bean.
 	 * <p>The returned instance can be modified during bean factory post-processing.
@@ -257,6 +266,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	MutablePropertyValues getPropertyValues();
 
 	/**
+	 * 判断是否有属性对应的值
+	 *
 	 * Return if there are property values values defined for this bean.
 	 * @since 5.0.2
 	 */
@@ -273,6 +284,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	void setInitMethodName(@Nullable String initMethodName);
 
 	/**
+	 * 获取初始化方法的名字
+	 *
 	 * Return the name of the initializer method.
 	 * @since 5.1
 	 */
@@ -288,6 +301,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	void setDestroyMethodName(@Nullable String destroyMethodName);
 
 	/**
+	 * 获取生命周期销毁方法的名字
+	 *
 	 * Return the name of the destroy method.
 	 * @since 5.1
 	 */
@@ -299,9 +314,9 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 * provides the frameworks as well as tools with an indication of
 	 * the role and importance of a particular {@code BeanDefinition}.
 	 * @since 5.1
-	 * @see #ROLE_APPLICATION
-	 * @see #ROLE_SUPPORT
-	 * @see #ROLE_INFRASTRUCTURE
+	 * @see #ROLE_APPLICATION 用户级别使用
+	 * @see #ROLE_SUPPORT 内部使用，不对用户级别开发
+	 * @see #ROLE_INFRASTRUCTURE 其他复杂的配置
 	 */
 	void setRole(int role);
 
@@ -324,6 +339,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	void setDescription(@Nullable String description);
 
 	/**
+	 * 获取 bean 的描述
+	 *
 	 * Return a human-readable description of this bean definition.
 	 */
 	@Nullable

@@ -43,10 +43,10 @@ import org.springframework.util.ObjectUtils;
  */
 public class ConstructorArgumentValues {
 
-	// 有序的参数
+	// 有序的参数，XML 中对应 index 属性
 	private final Map<Integer, ValueHolder> indexedArgumentValues = new LinkedHashMap<>();
 
-	// 无序的参数
+	// 无序的参数，XML 中对应 name 属性
 	private final List<ValueHolder> genericArgumentValues = new ArrayList<>();
 
 
@@ -353,8 +353,10 @@ public class ConstructorArgumentValues {
 	@Nullable
 	public ValueHolder getArgumentValue(int index, @Nullable Class<?> requiredType, @Nullable String requiredName, @Nullable Set<ValueHolder> usedValueHolders) {
 		Assert.isTrue(index >= 0, "Index must not be negative");
+		// 先根据下标拿
 		ValueHolder valueHolder = getIndexedArgumentValue(index, requiredType, requiredName);
 		if (valueHolder == null) {
+			// 再根据无序的拿
 			valueHolder = getGenericArgumentValue(requiredType, requiredName, usedValueHolders);
 		}
 		return valueHolder;

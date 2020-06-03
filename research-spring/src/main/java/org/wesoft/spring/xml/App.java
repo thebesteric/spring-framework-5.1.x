@@ -13,11 +13,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class App {
 
 	public static void main(String[] args) {
-		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
 		MyService myService = context.getBean(TestService.class).getMyService();
 		System.out.println(myService);
 
-		context.getBean(ConstructService.class).getTestService();
+		// context.getBean(ConstructService.class).getTestService();
+
+		System.out.println(context.getBeanFactory().getBeanDefinition("parent"));
 	}
 
 }

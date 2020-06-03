@@ -274,8 +274,8 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		}
 
 		// Quick check on the concurrent map first, with minimal locking.
-		// candidateConstructorsCache：已经被推断完成的类和该类被推断出来的构造方法的集合
-		// 检查是否在 candidateConstructorsCache 中
+		// ★ candidateConstructorsCache：存放已经被推断完成的类和该类被推断出来的构造方法的集合
+		// 检查当前的类是否在 candidateConstructorsCache 中已经存在了已经推断过的构造方法，如果被推断过，就直接拿出来使用
 		Constructor<?>[] candidateConstructors = this.candidateConstructorsCache.get(beanClass);
 		if (candidateConstructors == null) {
 			// Fully synchronized resolution now...
@@ -300,6 +300,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					Constructor<?> defaultConstructor = null;
 					// 推断主要的构造方法委托给 Kotlin，如果对于 Java 类，永远返回 null
 					Constructor<?> primaryConstructor = BeanUtils.findPrimaryConstructor(beanClass);
+					// 定义一个变量记录非合成的构造方法
 					int nonSyntheticConstructors = 0;
 					for (Constructor<?> candidate : rawCandidates) {
 						if (!candidate.isSynthetic()) {
@@ -334,11 +335,10 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 										". Found constructor with 'required' Autowired annotation already: " +
 										requiredConstructor);
 							}
-							// 推断注解上的值
+							// 推断注解上的值，也就是 required 的值
 							boolean required = determineRequiredStatus(ann);
 							if (required) {
-								// 循环构造方法，如果发现多个 @Autowired 的构造方法，并且并不是都是 false
-								// 就会抛出异常
+								// 循环构造方法，如果发现多个 @Autowired 的构造方法，就会抛出异常
 								if (!candidates.isEmpty()) {
 									throw new BeanCreationException(beanName,
 											"Invalid autowire-marked constructors: " + candidates +
@@ -351,7 +351,8 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 							// 将构造方法放到 candidates 集合中
 							candidates.add(candidate);
 						}
-						// 构造方法没有任何参数，说明是默认构造方法
+						// ★★★ 当没有提供 @Autowired 注解，且构造方法没有任何参数（说明是默认构造方法）的时候才会找到默认构造方法
+						// 这里很重要，也就是当提供了多个构造函数的时候，又没有特殊指定 @Autowired 注解，就会去找默认构造函数
 						else if (candidate.getParameterCount() == 0) {
 							defaultConstructor = candidate;
 						}
@@ -385,6 +386,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					else if (nonSyntheticConstructors == 1 && primaryConstructor != null) {
 						candidateConstructors = new Constructor<?>[] {primaryConstructor};
 					}
+					// 其他的情况，返回一个空集合
 					else {
 						candidateConstructors = new Constructor<?>[0];
 					}
@@ -401,7 +403,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
-			// 关键代码：开始注入属性
+			// ★★★ 关键代码：开始注入属性
 			metadata.inject(bean, beanName, pvs);
 		}
 		catch (BeanCreationException ex) {

@@ -108,7 +108,7 @@ class ConfigurationClassEnhancer {
 			return configClass;
 		}
 
-		// 创建代理类
+		// ★★★ 创建代理类
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
@@ -122,12 +122,12 @@ class ConfigurationClassEnhancer {
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
 		Enhancer enhancer = new Enhancer();
-		enhancer.setSuperclass(configSuperClass);
-		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
+		enhancer.setSuperclass(configSuperClass); // 设置父类
+		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class}); // 设置实现接口
 		enhancer.setUseFactory(false);
-		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE); // 名字生成策略
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
-		// 关键代码：设置回调方法 CALLBACK_FILTER 中的 new BeanMethodInterceptor()
+		// ★★★ 关键代码：设置回调方法 CALLBACK_FILTER 中的 new BeanMethodInterceptor()
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
 		return enhancer;
@@ -342,6 +342,7 @@ class ConfigurationClassEnhancer {
 			// proxy that intercepts calls to getObject() and returns any cached bean instance.
 			// This ensures that the semantics of calling a FactoryBean from within @Bean methods
 			// is the same as that of referring to a FactoryBean within XML. See SPR-6602.
+			// 是不是一个 factoryBean
 			if (factoryContainsBean(beanFactory, BeanFactory.FACTORY_BEAN_PREFIX + beanName) &&
 					factoryContainsBean(beanFactory, beanName)) {
 				Object factoryBean = beanFactory.getBean(BeanFactory.FACTORY_BEAN_PREFIX + beanName);
@@ -354,7 +355,7 @@ class ConfigurationClassEnhancer {
 				}
 			}
 
-			// 当前的 工厂方法 是否是 当前所执行的方法
+			// 是否是当前要执行的工厂方法
 			if (isCurrentlyInvokedFactoryMethod(beanMethod)) {
 				// The factory is calling the bean method in order to instantiate and register the bean
 				// (i.e. via a getBean() call) -> invoke the super implementation of the method to actually
@@ -401,6 +402,7 @@ class ConfigurationClassEnhancer {
 						}
 					}
 				}
+				// 从单例池获取要执行的方法
 				Object beanInstance = (useArgs ? beanFactory.getBean(beanName, beanMethodArgs) :
 						beanFactory.getBean(beanName));
 				if (!ClassUtils.isAssignableValue(beanMethod.getReturnType(), beanInstance)) {

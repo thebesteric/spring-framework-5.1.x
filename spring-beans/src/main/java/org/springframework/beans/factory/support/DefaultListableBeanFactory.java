@@ -481,7 +481,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	public String[] getBeanNamesForType(@Nullable Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
 		if (!isConfigurationFrozen() || type == null || !allowEagerInit) {
 			// 根据类型查找 beanName
-			// 同时完成了第一次 bean 的合并
+			// ★★★ 同时完成了第一次 bean 的合并
 			return doGetBeanNamesForType(ResolvableType.forRawClass(type), includeNonSingletons, allowEagerInit);
 		}
 		Map<Class<?>, String[]> cache =
@@ -506,7 +506,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			// is not defined as alias for some other bean.
 			if (!isAlias(beanName)) {
 				try {
-					// 获取合并后的 BeanDefinition
+					// ★★★ 获取合并后的 BeanDefinition
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 					// Only check bean definition if it is complete.
 					if (!mbd.isAbstract() && (allowEagerInit ||
@@ -523,6 +523,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 								isTypeMatch(beanName, type);
 						if (!matchFound && isFactoryBean) {
 							// In case of FactoryBean, try to match FactoryBean instance itself next.
+							// 如果是 FactoryBean 就再 beanName 前面加一个 & 符号
 							beanName = FACTORY_BEAN_PREFIX + beanName;
 							matchFound = (includeNonSingletons || mbd.isSingleton()) && isTypeMatch(beanName, type);
 						}
@@ -827,11 +828,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		// Trigger initialization of all non-lazy singleton beans...
 		// 循环遍历所有的 beanName，继而验证 beanDefinition
 		for (String beanName : beanNames) {
-			// ※ 关键代码：在这里进行合并
+			// ★★★ 关键代码：在这里进行合并 BD
+			// 合并之前是 GenericBeanDefinition，合并之后，就变成了 RootBeanDefinition 了
+			// 会把 GenericBeanDefinition 中的所有属性都替换给 RootBeanDefinition
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
-			// 必须是单例，而且不是抽象的，不是懒加载的
+			// ★ 必须是单例，而且不是抽象的，不是懒加载的
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
-				// 是否是 FactoryBean
+				// ★ 处理 FactoryBean
+				// FactoryBean 是一个接口，实现这个接口，可以控制 bean 的产生过程
 				if (isFactoryBean(beanName)) {
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
@@ -852,7 +856,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					}
 				}
 				else {
-					// 开始实例化普通的 bean
+					// ★★★ 开始实例化普通的 bean
 					getBean(beanName);
 				}
 			}
@@ -1138,6 +1142,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			Map<String, Object> candidates = new LinkedHashMap<>(candidateNames.length);
 			for (String beanName : candidateNames) {
 				if (containsSingleton(beanName) && args == null) {
+					// 获取 bean
 					Object beanInstance = getBean(beanName);
 					candidates.put(beanName, (beanInstance instanceof NullBean ? null : beanInstance));
 				}

@@ -16,7 +16,10 @@ public class Normal {
 	@Autowired
 	private Bar bar;
 
-	@Autowired
+	// @Autowired
 	TestBean testBean;
+
+	@Autowired
+	private Other other;
 
 }

@@ -74,9 +74,9 @@ class ComponentScanAnnotationParser {
 
 
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, final String declaringClass) {
-		// spring 自己 new 了一个 scanner，并没有使用 构造方法中的 scanner
+		// ★ spring 自己 new 了一个 scanner，并没有使用 构造方法中的 scanner
 		// 为什么不使用 暴露出去的 scanner 呢？
-		// 是因为 暴露出去的 scanner 没有提供扩展，这里的 scanner 可以进行扩展
+		// 是因为 暴露出去的 scanner 没有提供扩展，这里的 scanner 可以进行扩展，如配置：useDefaultFilters
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
 				componentScan.getBoolean("useDefaultFilters"), this.environment, this.resourceLoader);
 
@@ -133,6 +133,8 @@ class ComponentScanAnnotationParser {
 				return declaringClass.equals(className);
 			}
 		});
+
+		// ★★★ 开始真正执行扫描
 		return scanner.doScan(StringUtils.toStringArray(basePackages));
 	}
 

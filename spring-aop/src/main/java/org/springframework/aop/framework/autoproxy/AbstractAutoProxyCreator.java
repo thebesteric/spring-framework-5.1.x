@@ -242,18 +242,19 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
-		// 获取 bean 的名字
+		// 获取 bean 的名字，如果是 FactoryBean 的话，给他的前面加一个 & 符号
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
 			// 判断 advisedBeans 是否是包含不需要被代理的类
 			// advisedBeans 存放着两种 bean
-			// 1、不能被代理，比如 切面，AppConfig，这些都是不能被代理的类
+			// 1、不能被代理，比如 切面（Aspect），配置类（AppConfig），后置处理器（BeanPostProcessor），这些都是不能被代理的类
 			// 2、已经被代理的被，因为不需要继续被代理
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
 			// 判断是不是不需要被代理的类，如果是，则放到 advisedBeans 中
+			// 先判断是不是基础 Bean 或者 prototype 类型的 bean
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -302,7 +303,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
-				// 开始执行代理
+				// ★★★ 关键代码：开始执行代理
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
 		}
@@ -352,11 +353,13 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 
 		// Create proxy if we have advice.
+		// ★ 判断这个 bean 是否符合我们提供的切面规则
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
+			// 需要被代理的类
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
 
-			// 关键代码：开始创建代理
+			// ★★★ 关键代码：开始创建代理
 			Object proxy = createProxy(
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
 			this.proxyTypes.put(cacheKey, proxy.getClass());
@@ -457,6 +460,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
 
+		// 创建一个代理工厂
 		ProxyFactory proxyFactory = new ProxyFactory();
 
 		// 复制信息到工厂
@@ -481,6 +485,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			proxyFactory.setPreFiltered(true);
 		}
 
+		// ★★★ 创建 AOP 对象
 		return proxyFactory.getProxy(getProxyClassLoader());
 	}
 

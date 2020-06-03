@@ -317,7 +317,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @return a corresponding Set of autodetected bean definitions
 	 */
 	public Set<BeanDefinition> findCandidateComponents(String basePackage) {
-		// 如果提供了 Spring componentsIndex 的 jar 包
+		// 如果提供了 Spring componentsIndex 的 jar 包，静态索引
 		if (this.componentsIndex != null && indexSupportsIncludeFilters()) {
 			return addCandidateComponentsFromIndex(this.componentsIndex, basePackage);
 		}
@@ -424,10 +424,13 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	private Set<BeanDefinition> scanCandidateComponents(String basePackage) {
+		// 定义了一个存放 Spring Bean 的候选集合
 		Set<BeanDefinition> candidates = new LinkedHashSet<>();
 		try {
+			// 解析 basePackage 对于的路径
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			// 解析 packageSearchPath 获取所有类
 			Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
@@ -437,19 +440,21 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 				}
 				if (resource.isReadable()) {
 					try {
+						// 解析当前这个类所有的元数据，包括注解信息
 						MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
-						// 关键代码：是否是符合 Spring 规则的 Component
+						// ★★★ 关键代码：判断当前类是否是符合 Spring 规则的 @Component
 						if (isCandidateComponent(metadataReader)) {
-							// 创建了 ScannedGenericBeanDefinition
-							// 这里就证明了通过注解扫描出来的类都是 ScannedGenericBeanDefinition
+							// ★ 创建了 ScannedGenericBeanDefinition
+							// ★ 这里就证明了通过注解扫描出来的类都是 ScannedGenericBeanDefinition
 							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 							sbd.setResource(resource);
 							sbd.setSource(resource);
-							// 关键代码：返回是（否是一个独立的类（可以通过构造函数创建）并且 不能是接口和抽象类） 或者（是一个抽象类，并且 有 Lookup 注解）
+							// ★★★ 关键代码：返回是（是否是一个独立的类（可以通过构造函数创建）并且 不能是接口和抽象类）或者（是一个抽象类，并且 有 Lookup 注解）
 							if (isCandidateComponent(sbd)) {
 								if (debugEnabled) {
 									logger.debug("Identified candidate component class: " + resource);
 								}
+								// ★ 加入到候选集合中
 								candidates.add(sbd);
 							}
 							else {
@@ -496,26 +501,6 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	/**
-	 * Determine whether the given class does not match any exclude filter
-	 * and does match at least one include filter.
-	 * @param metadataReader the ASM ClassReader for the class
-	 * @return whether the class qualifies as a candidate component
-	 */
-	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
-		for (TypeFilter tf : this.excludeFilters) {
-			if (tf.match(metadataReader, getMetadataReaderFactory())) {
-				return false;
-			}
-		}
-		for (TypeFilter tf : this.includeFilters) {
-			if (tf.match(metadataReader, getMetadataReaderFactory())) {
-				return isConditionMatch(metadataReader);
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * Determine whether the given class is a candidate component based on any
 	 * {@code @Conditional} annotations.
 	 * @param metadataReader the ASM ClassReader for the class
@@ -530,6 +515,28 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	/**
+	 * Determine whether the given class does not match any exclude filter
+	 * and does match at least one include filter.
+	 * @param metadataReader the ASM ClassReader for the class
+	 * @return whether the class qualifies as a candidate component
+	 */
+	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+		for (TypeFilter tf : this.excludeFilters) {
+			if (tf.match(metadataReader, getMetadataReaderFactory())) {
+				return false;
+			}
+		}
+		// 判断是否是 Spring 所需要的类型 @Component
+		for (TypeFilter tf : this.includeFilters) {
+			// Mybatis 就是利用了 tf.match(metadataReader, getMetadataReaderFactory()) 让他永远返回 true
+			if (tf.match(metadataReader, getMetadataReaderFactory())) {
+				return isConditionMatch(metadataReader);
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Determine whether the given bean definition qualifies as candidate.
 	 * <p>The default implementation checks whether the class is not an interface
 	 * and not dependent on an enclosing class.
@@ -539,7 +546,8 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 */
 	protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
 		AnnotationMetadata metadata = beanDefinition.getMetadata();
-		// 返回是（否是一个独立的类（可以通过构造函数创建）并且 不能是接口和抽象类） 或者（是一个抽象类，并且 有 Lookup 注解）
+		// 返回是（是否是一个独立的类（可以通过构造函数创建）并且 不能是接口和抽象类）或者（是一个抽象类，并且 有 Lookup 注解）
+		// Lookup 注解标识返回原型数据
 		return (metadata.isIndependent() && (metadata.isConcrete() ||
 				(metadata.isAbstract() && metadata.hasAnnotatedMethods(Lookup.class.getName()))));
 	}

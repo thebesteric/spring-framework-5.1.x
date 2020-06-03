@@ -163,6 +163,7 @@ class ConfigurationClassParser {
 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
+				// ★ 解析配置类
 				if (bd instanceof AnnotatedBeanDefinition) {
 					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
 				}
@@ -239,7 +240,7 @@ class ConfigurationClassParser {
 		// Recursively process the configuration class and its superclass hierarchy.
 		SourceClass sourceClass = asSourceClass(configClass);
 		do {
-			// 关键代码：开始解析 ConfigurationClass
+			// ★★★ 关键代码：开始解析 ConfigurationClass
 			// 会处理 @Component，@ComponentScan，@ComponentScans
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass);
 		}
@@ -278,7 +279,7 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// 处理 @ComponentScans 注解
+		// ★★★ 处理 @ComponentScans 或 @ComponentScan 注解
 		// Process any @ComponentScan annotations
 		Set<AnnotationAttributes> componentScans = AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
@@ -286,7 +287,7 @@ class ConfigurationClassParser {
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
-				// 关键代码 开始解析 @ComponentScan 注解
+				// ★★★ 关键代码 开始解析 @ComponentScan 注解
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
@@ -295,6 +296,7 @@ class ConfigurationClassParser {
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
+					// 再次检查是否是配置类，因为 @Component 也是配置类的一种
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
 					}
@@ -578,13 +580,13 @@ class ConfigurationClassParser {
 						// Candidate class is an ImportBeanDefinitionRegistrar ->
 						// delegate to it to register additional bean definitions
 						Class<?> candidateClass = candidate.loadClass();
-						// 处理 ImportBeanDefinitionRegistrar，主要是实例化这个类
+						// ★ 处理 ImportBeanDefinitionRegistrar，主要是实例化这个类
 						ImportBeanDefinitionRegistrar registrar =
 								BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
-						// 实例化 ImportBeanDefinitionRegistrar 之后，判断是否有 AwareMethod
+						// ★ 实例化 ImportBeanDefinitionRegistrar 之后，执行所有实现了 XxxAware 类的 AwareMethod 方法
 						ParserStrategyUtils.invokeAwareMethods(
 								registrar, this.environment, this.resourceLoader, this.registry);
-						// 这里非常重要，把实例化好的 ImportBeanDefinitionRegistrar 放到 map 中
+						// ★★★ 这里非常重要，把实例化好的 ImportBeanDefinitionRegistrar 放到 map 中，并没有执行
 						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
 					}
 					else {

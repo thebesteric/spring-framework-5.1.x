@@ -12,7 +12,7 @@ import org.wesoft.spring.observer.example.Test;
  * @version Ver 1.0
  * @build 2020-05-12 23:26
  */
-@Component
+// @Component
 public class MyFactoryBean implements FactoryBean<TestBean> {
 
 	@Override

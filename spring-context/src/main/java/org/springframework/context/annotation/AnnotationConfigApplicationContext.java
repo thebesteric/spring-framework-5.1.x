@@ -64,14 +64,18 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 */
 	public AnnotationConfigApplicationContext() {
 		// 解析配置类，就是加了 @Configuration 的类，如 AppConfig.class，在 spring 内部，就是这个作用
-		// 同时还创建了 BeanFactory 对象: DefaultListableBeanFactory，在父类对象 GenericApplicationContext 中
+		// AnnotationConfigApplicationContext 是 GenericApplicationContext 的子类，所以再 new AnnotationConfigApplicationContext() 同时，也实例化了 GenericApplicationContext
+		// BeanFactory 对象: DefaultListableBeanFactory，在父类对象 GenericApplicationContext 中
 		// 同样也可以解析 GenericBeanDefinition 的类，因为 AnnotatedBeanDefinitionReader 继承了 GenericBeanDefinition
 		// 相当于 AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
-		// 提供一个 reader 出来，这么做是为了可以做到动态加载
+		// 提供一个 reader 出来，这么做是为了可以做到动态加载，即提供一个 API 给外部使用
 		// 同时还会将 Spring 所需要的一些内部的（必须的重要的） BD 放到 beanDefinitionMap 中
-		// 1、ConfigurationClassPostProcessor
-		// 2、AutowiredAnnotationBeanPostProcessor
-		// 3、CommonAnnotationBeanPostProcessor
+		// 1、internalConfigurationClassPostProcessor
+		// 2、internalAutowiredAnnotationBeanPostProcessor
+		// 3、internalCommonAnnotationBeanPostProcessor
+		// 4、internalEventListenerProcessor
+		// 5、internalEventListenerFactory
+		// 6、internalPersistenceAnnotationProcessor（是否启动 JPA）
 		this.reader = new AnnotatedBeanDefinitionReader(this);
 		// this.scanner 提供了动态扫描注解（是给外部使用的，Spring 内部并没有使用该类）
 		// 同时还注册了两个默认的 defaultFilters，一个是 ComponentFilter，一个是 ManagedBeanFilter
@@ -180,6 +184,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	@Override
 	public void register(Class<?>... componentClasses) {
 		Assert.notEmpty(componentClasses, "At least one component class must be specified");
+		// 这里其实就是：AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
+		// 并注册到 beanDefinitionMap 中去：BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 		this.reader.register(componentClasses);
 	}
 

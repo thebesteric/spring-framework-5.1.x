@@ -4,6 +4,22 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"
 	   default-autowire="byType">
 
+	<bean id="parent" abstract="true">
+
+	</bean>
+
+	<bean id="child" class="org.wesoft.spring.xml.ChildBean" parent="parent">
+
+	</bean>
+
+	<bean id="indexService" class="org.wesoft.spring.constructor.bean.IndexService" autowire="constructor">
+
+	</bean>
+
+	<bean id="userService" class="org.wesoft.spring.constructor.bean.UserService">
+
+	</bean>
+
 
 	<bean id="testService" class="org.wesoft.spring.xml.TestService">
 
