@@ -363,7 +363,7 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 				setDefaultHandler(resolvedHandler);
 			}
 			else {
-				// 关键代码：将 urlPath 放入 handlerMap，值为 resolvedHandler
+				// ★★★ 关键代码：将 urlPath 放入 handlerMap，值为 resolvedHandler
 				this.handlerMap.put(urlPath, resolvedHandler);
 				if (logger.isTraceEnabled()) {
 					logger.trace("Mapped [" + urlPath + "] onto " + getHandlerDescription(handler));

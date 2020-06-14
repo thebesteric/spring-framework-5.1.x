@@ -1,4 +1,4 @@
-package org.wesoft.spring.population.service;
+package org.wesoft.spring.population.bean;
 
 import org.springframework.stereotype.Component;
 

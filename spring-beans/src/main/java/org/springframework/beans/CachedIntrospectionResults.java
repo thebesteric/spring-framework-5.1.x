@@ -165,6 +165,7 @@ public final class CachedIntrospectionResults {
 	 */
 	@SuppressWarnings("unchecked")
 	static CachedIntrospectionResults forClass(Class<?> beanClass) throws BeansException {
+		// 先尝试从缓存中获取
 		CachedIntrospectionResults results = strongClassCache.get(beanClass);
 		if (results != null) {
 			return results;
@@ -174,6 +175,7 @@ public final class CachedIntrospectionResults {
 			return results;
 		}
 
+		// ★★★ 关键代码，获取所有的 set 方法
 		results = new CachedIntrospectionResults(beanClass);
 		ConcurrentMap<Class<?>, CachedIntrospectionResults> classCacheToUse;
 
@@ -270,6 +272,8 @@ public final class CachedIntrospectionResults {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Getting BeanInfo for class [" + beanClass.getName() + "]");
 			}
+			// ★★★ 通过 Java 内省机制获取  beanInfo
+			// beanInfo 中包含了当前类的描述
 			this.beanInfo = getBeanInfo(beanClass);
 
 			if (logger.isTraceEnabled()) {

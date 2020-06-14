@@ -27,7 +27,7 @@ public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
 		// bd.setLenientConstructorResolution(false); // 是否使用宽松模式
 		// bd.setNonPublicAccessAllowed(false); // 是否需要访问私有构造方法
 		// bd.getConstructorArgumentValues().addGenericArgumentValue(beanFactory.getBean(UserService.class));
-		// bd.setAutowireMode(GenericBeanDefinition.AUTOWIRE_CONSTRUCTOR);
-		bd.setInstanceSupplier(() -> new IndexService(beanFactory.getBean(UserService.class)));
+		bd.setAutowireMode(GenericBeanDefinition.AUTOWIRE_CONSTRUCTOR);
+		// bd.setInstanceSupplier(() -> new IndexService(beanFactory.getBean(UserService.class)));
 	}
 }

@@ -1,4 +1,4 @@
-package org.wesoft.spring.population.service;
+package org.wesoft.spring.population.bean;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 @Component
-public class Foo {
+public class Foo implements I{
 
 	@Autowired
 	Bar bar;

@@ -36,6 +36,7 @@ import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.ContextExposingHttpServletRequest;
 import org.springframework.web.context.support.WebApplicationObjectSupport;
@@ -312,9 +313,14 @@ public abstract class AbstractView extends WebApplicationObjectSupport implement
 					(this.staticAttributes.isEmpty() ? "" : ", static attributes " + this.staticAttributes));
 		}
 
-		// 关键代码：创建一个合并的 Model
+		// ★ 创建一个合并的 Model
+		// 合并注解 @ModelAttribute 和 手动提供的参数合并，如：@PathVariable 和 modelAndView.addObject(key, value)
 		Map<String, Object> mergedModel = createMergedOutputModel(model, request, response);
 		prepareResponse(request, response);
+
+		// ★★★ 关键代码：给浏览器返回视图
+		// 1、如果手动关闭输出流： RequestDispatcher.include(request, response)
+		// 2、如果没有关闭输出流： RequestDispatcher.forward(request, response)
 		renderMergedOutputModel(mergedModel, getRequestToExpose(request), response);
 	}
 

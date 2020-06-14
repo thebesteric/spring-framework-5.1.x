@@ -197,7 +197,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	 */
 	@Override
 	public void afterPropertiesSet() {
-		// 关键代码：初始化 @Controller 的方法，并生成映射关系
+		// ★★★ 关键代码：初始化 @Controller 的方法，并生成映射关系
 		initHandlerMethods();
 	}
 
@@ -208,7 +208,8 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	 * @see #handlerMethodsInitialized
 	 */
 	protected void 	initHandlerMethods() {
-		// 遍历 bean 的名称
+		// 遍历 bean 的名称，其实就是从容器中拿出所有类型微 Object.class 的 beanName
+		// getBeanNamesForType(Object.class)
 		for (String beanName : getCandidateBeanNames()) {
 			if (!beanName.startsWith(SCOPED_TARGET_NAME_PREFIX)) {
 				// 处理 bean
@@ -227,6 +228,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	protected String[] getCandidateBeanNames() {
 		// 是否从父子容器中拿所有的 bean 对象
 		// 默认是不从父容器中获取 bean 的
+		// 这里可以参考 Spring 的测试类 HandlerMethodMappingTests.java
 		return (this.detectHandlerMethodsInAncestorContexts ?
 				BeanFactoryUtils.beanNamesForTypeIncludingAncestors(obtainApplicationContext(), Object.class) :
 				obtainApplicationContext().getBeanNamesForType(Object.class));
@@ -256,9 +258,9 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 			}
 		}
 		// 判断是否是一个 handler
-		// 有没有 @Controller 或者 @RequestMapping 注解
+		// 即：有没有加 @Controller 或者 @RequestMapping 注解
 		if (beanType != null && isHandler(beanType)) {
-			// 推断 加了 @RequestMapping 的方法，并注册到 mappingRegistry
+			// ★★★ 推断 加了 @RequestMapping 的方法，并注册到 mappingRegistry
 			detectHandlerMethods(beanName);
 		}
 	}
@@ -274,11 +276,11 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 		if (handlerType != null) {
 			Class<?> userType = ClassUtils.getUserClass(handlerType);
-			// 获取所有方法
+			// 获取所有方法 key = method, value = RequestMappingInfo
 			Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
 					(MethodIntrospector.MetadataLookup<T>) method -> {
 						try {
-							// 返回有 @RequestMapping 的方法，并封装为 RequestMappingInfo
+							// ★★★ 返回有 @RequestMapping 的方法，并封装为 RequestMappingInfo
 							return getMappingForMethod(method, userType);
 						}
 						catch (Throwable ex) {
@@ -289,9 +291,12 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 			if (logger.isTraceEnabled()) {
 				logger.trace(formatMappings(userType, methods));
 			}
+
+			//
 			methods.forEach((method, mapping) -> {
 				Method invocableMethod = AopUtils.selectInvocableMethod(method, userType);
-				// 注册到 mappingRegistry 中
+				// ★★★ 注册到 mappingRegistry 中
+				// 也就是注册到 urlLookup Map 中去，key = uri, value = RequestMappingInfo
 				registerHandlerMethod(handler, invocableMethod, mapping);
 			});
 		}
@@ -372,10 +377,11 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	 */
 	@Override
 	protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Exception {
-		// 获取请求路径的 URI
+		// ★ 获取请求路径的 URI
 		String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
 		this.mappingRegistry.acquireReadLock();
 		try {
+			// ★★★ 根据请求路径找到对应的 handler
 			HandlerMethod handlerMethod = lookupHandlerMethod(lookupPath, request);
 			return (handlerMethod != null ? handlerMethod.createWithResolvedBean() : null);
 		}
@@ -396,7 +402,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	@Nullable
 	protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
 		List<Match> matches = new ArrayList<>();
-		// 从 urlLookup 中获取 RequestMappingInfo 对象
+		// ★ 从 urlLookup 中获取 RequestMappingInfo 对象
 		List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
 		if (directPathMatches != null) {
 			addMatchingMappings(directPathMatches, matches, request);
@@ -603,7 +609,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 				List<String> directUrls = getDirectUrls(mapping);
 				for (String url : directUrls) {
-					// 关键代码：加入 urlLookup
+					// ★★★ 关键代码：加入 urlLookup
 					this.urlLookup.add(url, mapping);
 				}
 

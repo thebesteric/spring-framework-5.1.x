@@ -790,12 +790,13 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			}
 			else {
 				// No HttpSession available -> no mutex necessary
+				// 执行 method 方法
 				mav = invokeHandlerMethod(request, response, handlerMethod);
 			}
 		}
 		else {
 			// No synchronization on session demanded at all...
-			// 关键代码：执行方法
+			// ★★★ 关键代码：通过反射执行方法
 			mav = invokeHandlerMethod(request, response, handlerMethod);
 		}
 
@@ -891,12 +892,13 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
 
-			// 关键代码：通过反射进行方法调用
+			// ★★★ 关键代码：通过反射进行方法调用，同时完成了处理返回值的逻辑
+			// 执行到这一步的时候，如果是 @ResponseBody 类型的方法，就已经完成了数据响应到页面的过程了
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				return null;
 			}
-			// 关键代码：返回一个 封装好的 ModelAndView
+			// ★★★ 关键代码：返回一个 封装好的 ModelAndView
 			return getModelAndView(mavContainer, modelFactory, webRequest);
 		}
 		finally {
@@ -1009,10 +1011,12 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 		}
 		ModelMap model = mavContainer.getModel();
 		ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model, mavContainer.getStatus());
+		// 检查是不是一个 View 对象，其实就是看看是不是 String
 		if (!mavContainer.isViewReference()) {
 			mav.setView((View) mavContainer.getView());
 		}
 		// 判断是不是 重定向 的参数
+		// 即方法中含有 RedirectAttributes 参数，该参数可以传递重定向的参数值
 		if (model instanceof RedirectAttributes) {
 			Map<String, ?> flashAttributes = ((RedirectAttributes) model).getFlashAttributes();
 			HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);

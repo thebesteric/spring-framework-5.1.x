@@ -1,5 +1,7 @@
 package org.wesoft.spring.merge;
 
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -22,6 +24,9 @@ public class App {
 		genericBeanDefinition.setParentName("root");
 		genericBeanDefinition.setBeanClass(ChildBean.class);
 		genericBeanDefinition.getPropertyValues().add("name", "枪火");
+		genericBeanDefinition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
+
+
 		ac.registerBeanDefinition("child", genericBeanDefinition);
 
 		ac.refresh();

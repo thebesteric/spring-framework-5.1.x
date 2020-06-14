@@ -42,6 +42,8 @@ public class App {
 		int scan = customScanner.scan("org.wesoft.spring.scan"); // 扫描到符合要求 bean 的数量
 		System.out.println(scan);
 
+		System.out.println(ac.getBean(CustomBean.class));
+
 		System.out.println(ac.getBean(Foo.class));
 
 

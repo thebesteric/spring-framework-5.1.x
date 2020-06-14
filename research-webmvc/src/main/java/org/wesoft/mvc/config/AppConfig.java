@@ -6,25 +6,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-import org.wesoft.mvc.resovler.UserParamResolver;
+import org.wesoft.mvc.resovler.LoginUserResolver;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Configuration
 @ComponentScan("org.wesoft.mvc")
 @EnableWebMvc // 相当于 XML 中的 <mvc:annotation-driven/>
 public class AppConfig implements WebMvcConfigurer {
+// public class AppConfig extends WebMvcConfigurationSupport {
 
 	/*
 	Apache Commons FileUpload
@@ -42,9 +40,13 @@ public class AppConfig implements WebMvcConfigurer {
 	@Autowired
 	public void iniArgumentsResolvers(RequestMappingHandlerAdapter requestMappingHandlerAdapter) {
 		List<HandlerMethodArgumentResolver> argumentResolvers = new ArrayList<>(requestMappingHandlerAdapter.getArgumentResolvers());
+		// 获取自定义的参数解析器
 		List<HandlerMethodArgumentResolver> customArgumentResolvers = requestMappingHandlerAdapter.getCustomArgumentResolvers();
+		// 删除原来集合中的自定义参数解析器
 		argumentResolvers.removeAll(customArgumentResolvers);
+		// 重新加入到最前面
 		argumentResolvers.addAll(0, customArgumentResolvers);
+		// 重新设置参数解析器
 		requestMappingHandlerAdapter.setArgumentResolvers(argumentResolvers);
 	}
 
@@ -65,8 +67,8 @@ public class AppConfig implements WebMvcConfigurer {
 	 */
 	@Override
 	public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-		FastJsonHttpMessageConverter fastJsonHttpMessageConverter = new FastJsonHttpMessageConverter();
-		converters.add(fastJsonHttpMessageConverter);
+		FastJsonHttpMessageConverter jsonHttpMessageConverter = new FastJsonHttpMessageConverter();
+		converters.add(jsonHttpMessageConverter);
 	}
 
 	/**
@@ -79,6 +81,6 @@ public class AppConfig implements WebMvcConfigurer {
 		// 这里其实是传过来一个空集合，对应着 customArgumentResolvers
 		// 也就是我们其实是在 customArgumentResolvers 里添加自定义方法
 		// 然后 spring mvc 会将这个集合合并到 argumentResolvers 中，所以并不能保证执行顺序
-		resolvers.add(new UserParamResolver());
+		resolvers.add(new LoginUserResolver());
 	}
 }

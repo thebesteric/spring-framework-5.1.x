@@ -1,9 +1,7 @@
 package org.wesoft.spring.population;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.wesoft.spring.observer.event.MailBean;
-import org.wesoft.spring.population.service.Bar;
-import org.wesoft.spring.population.service.Foo;
+import org.wesoft.spring.population.bean.Foo;
 
 public class App {
 

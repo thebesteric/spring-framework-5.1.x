@@ -1,5 +1,8 @@
 package org.wesoft.spring.merge.bean;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 /**
  * RootBean
  *

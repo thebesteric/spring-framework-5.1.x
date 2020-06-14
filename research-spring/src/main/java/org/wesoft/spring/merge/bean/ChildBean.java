@@ -1,5 +1,10 @@
 package org.wesoft.spring.merge.bean;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 /**
  * ChildBean
  *
@@ -11,6 +16,10 @@ package org.wesoft.spring.merge.bean;
 public class ChildBean {
 	private String name;
 	private String type;
+
+	public void setRoot(RootBean rootBean){
+		System.out.println(rootBean);
+	}
 
 	public String getName() {
 		return name;

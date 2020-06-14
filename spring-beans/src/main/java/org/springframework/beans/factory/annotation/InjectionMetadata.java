@@ -87,11 +87,14 @@ public class InjectionMetadata {
 		Collection<InjectedElement> elementsToIterate =
 				(checkedElements != null ? checkedElements : this.injectedElements);
 		if (!elementsToIterate.isEmpty()) {
+			// ★ 开始循环注入所找出来的所有 @Autowired 属性（可能是方法，可能是字段）
 			for (InjectedElement element : elementsToIterate) {
 				if (logger.isTraceEnabled()) {
 					logger.trace("Processing injected element of bean '" + beanName + "': " + element);
 				}
-				// 关键代码：执行 DI
+				// ★★★ 关键代码：执行 DI
+				// 1、如果是 field 就执行 AutowiredFieldElement 类的 inject
+				// 1、如果是 method 就执行 AutowiredMethodElement 类的 inject
 				element.inject(target, beanName, pvs);
 			}
 		}

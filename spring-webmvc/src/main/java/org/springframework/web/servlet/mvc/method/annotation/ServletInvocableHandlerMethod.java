@@ -102,32 +102,38 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 	public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
 
-		// 关键代码：反射获取参数，并进赋值，然后执行方法，并获取返回值
+		// ★★★ 关键代码：反射获取参数，并进赋值，
+		// 然后执行方法，并获取方法的返回值
 		Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
 
-		// 处理 方法上的 @ResponseStatus 注解
+		// 处理方法上的 @ResponseStatus 注解
+		// @ResponseStatus 通常标记在异常类上，如果标记在正常的方法上，那么所有的请求都会抛出异常
 		setResponseStatus(webRequest);
 
+		// 判断是否需要进行视图跳转逻辑
 		// 是否有返回值
 		if (returnValue == null) {
+			// mavContainer.isRequestHandled() 表示是否需要进行视图跳转
 			if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
 				disableContentCachingIfNecessary(webRequest);
+				// RequestHandled = true，表示需要进行视图跳转
 				mavContainer.setRequestHandled(true);
 				return;
 			}
 		}
 		// 是否有异常信息
 		else if (StringUtils.hasText(getResponseStatusReason())) {
+			// RequestHandled = true，表示需要进行视图跳转
 			mavContainer.setRequestHandled(true);
 			return;
 		}
 
-		// 可能需要进行视图跳转
+		// 尝试不进行视图跳转
 		mavContainer.setRequestHandled(false);
 		Assert.state(this.returnValueHandlers != null, "No return value handlers");
 		try {
-			// 关键代码：判断是否需要视图跳转
-			// 从 returnValueHandlers 中选项合适的处理器来处理返回值
+			// ★★★ 关键代码：处理返回值
+			// 从 returnValueHandlers 中选项合适的处理器来处理返回值，并再次判断是否需要视图跳转
 			this.returnValueHandlers.handleReturnValue(
 					returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
 		}
@@ -147,14 +153,16 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 		if (status == null) {
 			return;
 		}
-
+		// 获取 HttpServletResponse
 		HttpServletResponse response = webRequest.getResponse();
 		if (response != null) {
 			String reason = getResponseStatusReason();
 			if (StringUtils.hasText(reason)) {
+				// 设置错误响应状态码
 				response.sendError(status.value(), reason);
 			}
 			else {
+				// 设置正确响应状态码
 				response.setStatus(status.value());
 			}
 		}

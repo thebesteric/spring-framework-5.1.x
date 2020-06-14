@@ -401,9 +401,12 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+		// ★★★ 获取需要注入的元数据
+		// 1、查找标记有 @Autowired 的 field
+		// 2、查找标记有 @Autowired 的 method
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
-			// ★★★ 关键代码：开始注入属性
+			// ★★★ 关键代码：真正的开始注入属性
 			metadata.inject(bean, beanName, pvs);
 		}
 		catch (BeanCreationException ex) {
@@ -447,7 +450,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 	private InjectionMetadata findAutowiringMetadata(String beanName, Class<?> clazz, @Nullable PropertyValues pvs) {
 		// Fall back to class name as cache key, for backwards compatibility with custom callers.
-		// 将类名作为缓存的名字，以便后面的程序调用
+		// ★ 将类名作为缓存的名字，以便后面的程序调用
 		String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
 		// Quick check on the concurrent map first, with minimal locking.
 		InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
@@ -474,9 +477,9 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		do {
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
 
-			// 反射查找所有的 @Autowired 的属性
+			// ★ 反射查找所有的类上面的 @Autowired 的 field
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
-				// 查找注解的属性
+				// 查找含有 @Autowired 注解的属性
 				AnnotationAttributes ann = findAutowiredAnnotation(field);
 				if (ann != null) {
 					if (Modifier.isStatic(field.getModifiers())) {
@@ -485,18 +488,19 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						}
 						return;
 					}
-					// 根据属性，获取属性对应的值
+					// 根据注解，获取注解对应的值，也就是 required 值
 					boolean required = determineRequiredStatus(ann);
 					currElements.add(new AutowiredFieldElement(field, required));
 				}
 			});
 
-			// 反射查找所有的 @Autowired 的方法
+			// ★ 反射查找所有的 @Autowired 的 method
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
 					return;
 				}
+				// 查找含有 @Autowired 注解的方法
 				AnnotationAttributes ann = findAutowiredAnnotation(bridgedMethod);
 				if (ann != null && method.equals(ClassUtils.getMostSpecificMethod(method, clazz))) {
 					if (Modifier.isStatic(method.getModifiers())) {
@@ -624,17 +628,21 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
 			Field field = (Field) this.member;
 			Object value;
+			// 判断是否缓存过（多线程的情况下，可能 cached 为 true）
 			if (this.cached) {
 				value = resolvedCachedArgument(beanName, this.cachedFieldValue);
 			}
 			else {
+				// 依赖字段描述
 				DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
 				desc.setContainingClass(bean.getClass());
 				Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
 				Assert.state(beanFactory != null, "No BeanFactory available");
 				TypeConverter typeConverter = beanFactory.getTypeConverter();
 				try {
-					// 关键代码：执行 DI
+					// ★★★ 关键代码：执行 DI
+					// 返回需要注入的 bean 对象
+					// 如果存在循环依赖的情况，会调用 singletonFactories（二级缓存）中暴露的工厂方法
 					value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
 				}
 				catch (BeansException ex) {
@@ -649,6 +657,9 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 								String autowiredBeanName = autowiredBeanNames.iterator().next();
 								if (beanFactory.containsBean(autowiredBeanName) &&
 										beanFactory.isTypeMatch(autowiredBeanName, field.getType())) {
+									// ★★★ 将 cachedFieldValue 的值替换为 ShortcutDependencyDescriptor
+									// ShortcutDependencyDescriptor 记录了当前 bean 需要注入的属性信息
+									// ShortcutDependencyDescriptor 提供了一个快捷获取 bean 的方式，就是直接从单例池中获取
 									this.cachedFieldValue = new ShortcutDependencyDescriptor(
 											desc, autowiredBeanName, field.getType());
 								}
@@ -657,10 +668,14 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						else {
 							this.cachedFieldValue = null;
 						}
+						// 标记为已缓存
 						this.cached = true;
 					}
 				}
 			}
+
+			// ★★★ 关键代码：利用反射完成属性注入
+			// 这里就证明了其实 @Autowired 是通过反射来完成的
 			if (value != null) {
 				ReflectionUtils.makeAccessible(field);
 				field.set(bean, value);
@@ -779,8 +794,10 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	@SuppressWarnings("serial")
 	private static class ShortcutDependencyDescriptor extends DependencyDescriptor {
 
+		// shortcut 就是需要注入的 beanName
 		private final String shortcut;
 
+		// requiredType 就是需要注入的 Class
 		private final Class<?> requiredType;
 
 		public ShortcutDependencyDescriptor(DependencyDescriptor original, String shortcut, Class<?> requiredType) {
@@ -791,6 +808,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 		@Override
 		public Object resolveShortcut(BeanFactory beanFactory) {
+			// 直接从单例池中通过名字和类型获取 bean
 			return beanFactory.getBean(this.shortcut, this.requiredType);
 		}
 	}

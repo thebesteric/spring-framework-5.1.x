@@ -1,5 +1,8 @@
 package org.wesoft.mvc.spi;
 
+import org.springframework.util.ReflectionUtils;
+import org.springframework.web.WebApplicationInitializer;
+
 import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -15,7 +18,7 @@ public class MyServletContainerInitializer implements ServletContainerInitialize
         for (Class<?> webAppInitializerClass : webAppInitializerClasses) {
             try {
                 TestWebApplicationInitializer obj = (TestWebApplicationInitializer) webAppInitializerClass.newInstance();
-                obj.show(servletContext);
+                obj.onStartup(servletContext);
             } catch (Exception e) {
                 e.printStackTrace();
             }

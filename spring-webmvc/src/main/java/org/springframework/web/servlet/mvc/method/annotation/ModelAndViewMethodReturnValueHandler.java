@@ -84,6 +84,7 @@ public class ModelAndViewMethodReturnValueHandler implements HandlerMethodReturn
 		}
 
 		ModelAndView mav = (ModelAndView) returnValue;
+		// 判断 view 是不是 String
 		if (mav.isReference()) {
 			String viewName = mav.getViewName();
 			mavContainer.setViewName(viewName);
@@ -99,6 +100,7 @@ public class ModelAndViewMethodReturnValueHandler implements HandlerMethodReturn
 			}
 		}
 		mavContainer.setStatus(mav.getStatus());
+		// 设置传递需要的参数
 		mavContainer.addAllAttributes(mav.getModel());
 	}
 

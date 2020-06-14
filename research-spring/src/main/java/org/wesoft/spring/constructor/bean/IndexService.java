@@ -27,9 +27,9 @@ public class IndexService {
 	// }
 
 	// @Autowired(required = false)
-	public IndexService(OrderService orderService){
-		System.out.println("IndexService using orderService constructor");
-	}
+	// public IndexService(OrderService orderService){
+	// 	System.out.println("IndexService using orderService constructor");
+	// }
 
 	// @Autowired(required = false)
 	public IndexService(UserService userService){

@@ -957,7 +957,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		try {
-			// 关键代码
+			// ★★★ 关键代码
 			doDispatch(request, response);
 		} finally {
 			if (!WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
@@ -1027,14 +1027,14 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
-				// 检查请求是否有上传文件操作
+				// ★★★ 检查请求是否有上传文件操作
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				/*
 				Determine handler for the current request.
 
-				推断当前请求（Controller）的处理程序
+				★★★ 推断当前请求（Controller）的处理程序
 				关键代码：返回一个 MappedHandler 对象，里面包括要执行的方法以及对应的方法参数
 				处理 handler 由两大类型
 				1、加上了 @Controller 注解：RequestMappingHandlerMapping
@@ -1050,7 +1050,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				/*
 				Determine handler adapter for the current request.
 
-				关键代码：确定当前请求的 handler 的 Adapter（3种方式）
+				★★★ 关键代码：确定当前请求的 handler 的 Adapter（3种方式）
 				1、加上了 @Controller 注解：
 					mappedHandler.getHandler() 返回一个：方法
 					HandlerAdapter = RequestMappingHandlerAdapter
@@ -1064,7 +1064,9 @@ public class DispatcherServlet extends FrameworkServlet {
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
+				// 获取请求类型
 				String method = request.getMethod();
+
 				// 是否是 GET 请求方式
 				boolean isGet = "GET".equals(method);
 				if (isGet || "HEAD".equals(method)) {
@@ -1082,15 +1084,20 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				// Actually invoke the handler.
-				// 关键代码：开始执行方法，返回一个 ModelAndView 对象
-				// 1、如果是 beanName 的方式就比较简单，直接调用接口的实现类的方法即可
-				// 2、如果是 @Controller 的方式，就是 RequestMappingHandlerAdapter
+				// ★★★ 关键代码：开始执行方法，返回一个 ModelAndView 对象
+				// 该方法分为两个阶段 invoke 和 handler
+				// invoker 阶段：
+				// 		1、如果是 beanName 的方式就比较简单，直接调用接口的实现类的方法即可
+				// 		2、如果是 @Controller 的方式，就是 RequestMappingHandlerAdapter
+				// handler 阶段：
+				// 		1、解析 String 的返回值
+				//		2、解析 @ResponseBody 的返回值
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
 					return;
 				}
-				// 尝试解析一个默认视图
+				// ★★★ 尝试解析一个默认视图
 				applyDefaultViewName(processedRequest, mv);
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			} catch (Exception ex) {
@@ -1100,7 +1107,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
-			// 关键代码：尝试开始解析视图
+			// ★★★ 关键代码：尝试开始解析视图
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		} catch (Exception ex) {
 			triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
@@ -1144,6 +1151,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		boolean errorView = false;
 
+		// 如果上述过程中发送了异常，会在这里处理，并返回异常
 		if (exception != null) {
 			if (exception instanceof ModelAndViewDefiningException) {
 				logger.debug("ModelAndViewDefiningException encountered", exception);
@@ -1157,7 +1165,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		// Did the handler return a view to render?
 		if (mv != null && !mv.wasCleared()) {
-			// 关键代码：响应视图
+			// ★★★ 关键代码：响应视图
 			render(mv, request, response);
 			if (errorView) {
 				WebUtils.clearErrorRequestAttributes(request);
@@ -1402,6 +1410,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	protected void render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		// Determine locale for request and apply it to the response.
+
+		// 国际化支持
 		Locale locale =
 				(this.localeResolver != null ? this.localeResolver.resolveLocale(request) : request.getLocale());
 		response.setLocale(locale);
@@ -1410,7 +1420,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		String viewName = mv.getViewName();
 		if (viewName != null) {
 			// We need to resolve the view name.
-			// 根据视图名称，解析视图
+			// ★ 根据视图名称，解析视图，并封装为一个 View 对象
 			view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
 			if (view == null) {
 				throw new ServletException("Could not resolve view with name '" + mv.getViewName() +
@@ -1433,7 +1443,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			if (mv.getStatus() != null) {
 				response.setStatus(mv.getStatus().value());
 			}
-			// 关键代码：开始真正的解析视图
+			// ★★★ 关键代码：开始真正的解析视图
 			view.render(mv.getModelInternal(), request, response);
 		} catch (Exception ex) {
 			if (logger.isDebugEnabled()) {
@@ -1479,8 +1489,9 @@ public class DispatcherServlet extends FrameworkServlet {
 								   Locale locale, HttpServletRequest request) throws Exception {
 
 		if (this.viewResolvers != null) {
-			// 查找视图解析器
+			// 查找视图解析器，通常就是我们配置的 prefix、suffix
 			for (ViewResolver viewResolver : this.viewResolvers) {
+				// 解析过程其实就是根据 viewName 组合 prefix 和 suffix 来查找视图
 				View view = viewResolver.resolveViewName(viewName, locale);
 				if (view != null) {
 					return view;

@@ -6,7 +6,7 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import org.wesoft.mvc.annotation.UserParam;
+import org.wesoft.mvc.annotation.LoginUser;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,10 +16,11 @@ import java.util.Map;
  * 如：返回 Map 对象，会提前给 Spring 自带的 Map 解析器给解析了
  */
 @Component
-public class UserParamResolver implements HandlerMethodArgumentResolver {
+public class LoginUserResolver implements HandlerMethodArgumentResolver {
+
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
-		return parameter.hasParameterAnnotation(UserParam.class);
+		return parameter.hasParameterAnnotation(LoginUser.class);
 	}
 
 	@Override
@@ -27,6 +28,7 @@ public class UserParamResolver implements HandlerMethodArgumentResolver {
 		// 从 request 或 redis 中获取用户逻辑...
 		System.out.println("---从 request 或 redis 中获取用户逻辑---");
 		Map<String, Object> map = new HashMap<>();
+		map.put("sessionId", webRequest.getSessionId());
 		map.put("id", "123456");
 		map.put("name", "eric");
 		return map;
