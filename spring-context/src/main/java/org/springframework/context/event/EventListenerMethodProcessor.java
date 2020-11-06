@@ -100,6 +100,7 @@ public class EventListenerMethodProcessor
 	public void afterSingletonsInstantiated() {
 		ConfigurableListableBeanFactory beanFactory = this.beanFactory;
 		Assert.state(this.beanFactory != null, "No ConfigurableListableBeanFactory set");
+		// 获取所有的 bean
 		String[] beanNames = beanFactory.getBeanNamesForType(Object.class);
 		for (String beanName : beanNames) {
 			if (!ScopedProxyUtils.isScopedTarget(beanName)) {
@@ -130,6 +131,7 @@ public class EventListenerMethodProcessor
 						}
 					}
 					try {
+						// ★ 处理 bean
 						processBean(beanName, type);
 					}
 					catch (Throwable ex) {
@@ -148,6 +150,7 @@ public class EventListenerMethodProcessor
 
 			Map<Method, EventListener> annotatedMethods = null;
 			try {
+				// ★★★ 通过反射找到所有 @EventListener 注解修饰的方法
 				annotatedMethods = MethodIntrospector.selectMethods(targetType,
 						(MethodIntrospector.MetadataLookup<EventListener>) method ->
 								AnnotatedElementUtils.findMergedAnnotation(method, EventListener.class));
@@ -175,11 +178,14 @@ public class EventListenerMethodProcessor
 					for (EventListenerFactory factory : factories) {
 						if (factory.supportsMethod(method)) {
 							Method methodToUse = AopUtils.selectInvocableMethod(method, context.getType(beanName));
+							// ★★★ 将当前类，包装为一个 ApplicationListenerMethodAdapter 类
+							// 这样就可以利用接口 ApplicationListener 进行调用
 							ApplicationListener<?> applicationListener =
 									factory.createApplicationListener(beanName, targetType, methodToUse);
 							if (applicationListener instanceof ApplicationListenerMethodAdapter) {
 								((ApplicationListenerMethodAdapter) applicationListener).init(context, this.evaluator);
 							}
+							// 加入到上下文中，多播器会从上下文中，取出这些监听器对象
 							context.addApplicationListener(applicationListener);
 							break;
 						}

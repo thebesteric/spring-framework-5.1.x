@@ -1,6 +1,7 @@
 package org.wesoft.spring.lifecycle;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.wesoft.spring.lifecycle.bean.UserService;
 
 /**
  * TODO
@@ -15,6 +16,8 @@ public class App {
 		AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext();
 		ac.register(AppConfig.class);
 		ac.refresh();
+
+		UserService userService = (UserService) ac.getBean("userService");
 
 		// 如果继承了 Lifecycle 必须显式的调用 start 方法
 		// ac.start();

@@ -384,6 +384,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Decorate event as an ApplicationEvent if necessary
 		ApplicationEvent applicationEvent;
+		// 判断类型是否是 ApplicationEvent
 		if (event instanceof ApplicationEvent) {
 			applicationEvent = (ApplicationEvent) event;
 		}
@@ -399,6 +400,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			this.earlyApplicationEvents.add(applicationEvent);
 		}
 		else {
+			// 开始广播事件
+			// ApplicationEventMulticaster：事件管理器
 			getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
 		}
 
@@ -423,6 +426,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			throw new IllegalStateException("ApplicationEventMulticaster not initialized - " +
 					"call 'refresh' before multicasting events via the context: " + this);
 		}
+		// 实现类是：SimpleApplicationEventMulticaster
 		return this.applicationEventMulticaster;
 	}
 
@@ -543,12 +547,17 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
+				// 初始化事件多播器
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
+				// 初始化一些特殊的 bean
 				onRefresh();
 
 				// Check for listener beans and register them.
+				// 注册监听器
+				// 1、注册一些以接口实现方式的监听器，添加到 applicationListenerBeans 中
+				// 2、当调用【第八次】调用后置处理器时，同时添加到 applicationListeners 中
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
@@ -775,15 +784,20 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initApplicationEventMulticaster() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		// 如果容器中存在
 		if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
+			// 从容器中获取事件多播器，实现类是 SimpleApplicationEventMulticaster
 			this.applicationEventMulticaster =
 					beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, ApplicationEventMulticaster.class);
 			if (logger.isTraceEnabled()) {
 				logger.trace("Using ApplicationEventMulticaster [" + this.applicationEventMulticaster + "]");
 			}
 		}
+		// 如果容器中不存在（一开始初始化的时候，并不存在事件多播器）
 		else {
+			// ★ 多播器保存了 beanFactory 对象
 			this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
+			// ★ 将 applicationEventMulticaster 注册到容器中
 			beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
 			if (logger.isTraceEnabled()) {
 				logger.trace("No '" + APPLICATION_EVENT_MULTICASTER_BEAN_NAME + "' bean, using " +
@@ -835,14 +849,20 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void registerListeners() {
 		// Register statically specified listeners first.
+		// 注册所有的监听器（
+		// ★★★ 这里会在【第八次】调用后置处理器时
+		// 调用 ApplicationListenerDetector 的 postProcessAfterInitialization 方法，加入到 applicationListeners 中
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
+			// // ★★★ 加入到 SimpleApplicationEventMulticaster 对象的 applicationListeners 中
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		// ★★★ 获取通过继承了 ApplicationListener 接口的监听器
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		for (String listenerBeanName : listenerBeanNames) {
+			// ★★★ 加入到 SimpleApplicationEventMulticaster 对象的 applicationListenerBeans 中
 			getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
 		}
 
@@ -1117,6 +1137,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Override
 	public Object getBean(String name) throws BeansException {
 		assertBeanFactoryActive();
+		// getBeanFactory() => DefaultListableBeanFactory
 		return getBeanFactory().getBean(name);
 	}
 

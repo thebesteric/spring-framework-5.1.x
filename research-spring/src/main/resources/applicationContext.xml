@@ -12,9 +12,6 @@
 
 	</bean>
 
-	<bean id="indexService" class="org.wesoft.spring.constructor.bean.IndexService" autowire="constructor">
-
-	</bean>
 
 	<bean id="userService" class="org.wesoft.spring.constructor.bean.UserService">
 

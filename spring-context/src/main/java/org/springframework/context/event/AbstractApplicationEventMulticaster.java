@@ -172,11 +172,15 @@ public abstract class AbstractApplicationEventMulticaster
 	protected Collection<ApplicationListener<?>> getApplicationListeners(
 			ApplicationEvent event, ResolvableType eventType) {
 
+		// 事件源（发起事件的对象）
 		Object source = event.getSource();
+		// 事件源类型
 		Class<?> sourceType = (source != null ? source.getClass() : null);
+		// 根据事件源和事件源的类型，生成一个 cacheKey
 		ListenerCacheKey cacheKey = new ListenerCacheKey(eventType, sourceType);
 
 		// Quick check for existing entry on ConcurrentHashMap...
+		// 从缓存中查询，提高效率
 		ListenerRetriever retriever = this.retrieverCache.get(cacheKey);
 		if (retriever != null) {
 			return retriever.getApplicationListeners();
@@ -187,13 +191,16 @@ public abstract class AbstractApplicationEventMulticaster
 						(sourceType == null || ClassUtils.isCacheSafe(sourceType, this.beanClassLoader)))) {
 			// Fully synchronized building and caching of a ListenerRetriever
 			synchronized (this.retrievalMutex) {
+				// DCL 再次进行检查
 				retriever = this.retrieverCache.get(cacheKey);
 				if (retriever != null) {
 					return retriever.getApplicationListeners();
 				}
+				// 给 ListenerRetriever 封装所有符合条件类型的监听器
 				retriever = new ListenerRetriever(true);
 				Collection<ApplicationListener<?>> listeners =
 						retrieveApplicationListeners(eventType, sourceType, retriever);
+				// 加入缓存
 				this.retrieverCache.put(cacheKey, retriever);
 				return listeners;
 			}
@@ -218,10 +225,15 @@ public abstract class AbstractApplicationEventMulticaster
 		Set<ApplicationListener<?>> listeners;
 		Set<String> listenerBeans;
 		synchronized (this.retrievalMutex) {
+			// 所有注册的监听器
 			listeners = new LinkedHashSet<>(this.defaultRetriever.applicationListeners);
+			// 以接口形式的接听其
 			listenerBeans = new LinkedHashSet<>(this.defaultRetriever.applicationListenerBeans);
 		}
+
+		// 查找所有注册的监听器
 		for (ApplicationListener<?> listener : listeners) {
+			// 判断是否是感兴趣的事件
 			if (supportsEvent(listener, eventType, sourceType)) {
 				if (retriever != null) {
 					retriever.applicationListeners.add(listener);
@@ -229,6 +241,8 @@ public abstract class AbstractApplicationEventMulticaster
 				allListeners.add(listener);
 			}
 		}
+
+		// 查找所有以接口形式注册的监听器
 		if (!listenerBeans.isEmpty()) {
 			BeanFactory beanFactory = getBeanFactory();
 			for (String listenerBeanName : listenerBeans) {

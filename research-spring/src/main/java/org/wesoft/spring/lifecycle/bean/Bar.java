@@ -17,21 +17,24 @@ import javax.annotation.PostConstruct;
 @Component
 public class Bar implements InitializingBean {
 
+	@Autowired
+	private UserService userService;
+
 	@PostConstruct
 	private void postConstruct() {
-		// 1
+		// 第一执行
 		System.out.println("Bar PostConstruct");
 	}
 
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		// 2
+		// 第二执行
 		System.out.println("Bar afterPropertiesSet");
 	}
 
 	private void initMethod() {
-		// 3
+		// 第三执行
 		System.out.println("Bar initMethod");
 	}
 

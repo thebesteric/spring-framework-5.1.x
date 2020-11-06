@@ -93,8 +93,9 @@ public class InjectionMetadata {
 					logger.trace("Processing injected element of bean '" + beanName + "': " + element);
 				}
 				// ★★★ 关键代码：执行 DI
-				// 1、如果是 field 就执行 AutowiredFieldElement 类的 inject
-				// 1、如果是 method 就执行 AutowiredMethodElement 类的 inject
+				// 1、@Autowired 如果是 field 就执行 AutowiredFieldElement 类的 inject
+				// 2、@Autowired 如果是 method 就执行 AutowiredMethodElement 类的 inject
+				// 3、@Resource 是走 InjectedElement 的 inject
 				element.inject(target, beanName, pvs);
 			}
 		}

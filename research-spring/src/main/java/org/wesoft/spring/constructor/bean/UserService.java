@@ -3,6 +3,8 @@ package org.wesoft.spring.constructor.bean;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Description;
 import org.springframework.stereotype.Component;
+import org.wesoft.spring.properyeditor.User;
+import org.wesoft.spring.xml.TestService;
 
 /**
  * TODO

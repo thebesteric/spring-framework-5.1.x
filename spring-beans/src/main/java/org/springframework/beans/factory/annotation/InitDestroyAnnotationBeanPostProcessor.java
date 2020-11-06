@@ -131,8 +131,11 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		// 查找生命周期相关的注解 @PostConstructor 和 @PreDestroy 的方法
+		// ★★★ LifecycleMetadata 类封装了 initMethods 和 destroyMethods
 		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass());
 		try {
+			// 执行 initMethods 中的方法
 			metadata.invokeInitMethods(bean, beanName);
 		}
 		catch (InvocationTargetException ex) {
@@ -196,7 +199,9 @@ public class InitDestroyAnnotationBeanPostProcessor
 	}
 
 	private LifecycleMetadata buildLifecycleMetadata(final Class<?> clazz) {
+		// 初始化方法集合
 		List<LifecycleElement> initMethods = new ArrayList<>();
+		// 销毁方法集合
 		List<LifecycleElement> destroyMethods = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
@@ -204,9 +209,10 @@ public class InitDestroyAnnotationBeanPostProcessor
 			final List<LifecycleElement> currInitMethods = new ArrayList<>();
 			final List<LifecycleElement> currDestroyMethods = new ArrayList<>();
 
+			// 反射查找
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				// initAnnotationType 在 CommonAnnotationBeanPostProcessor 的构造方法中就已经被初始化了
-				// initAnnotationType = PostConstruct.class
+				// ★★★ initAnnotationType = PostConstruct.class
 				if (this.initAnnotationType != null && method.isAnnotationPresent(this.initAnnotationType)) {
 					LifecycleElement element = new LifecycleElement(method);
 					currInitMethods.add(element);
@@ -215,7 +221,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 					}
 				}
 				// destroyAnnotationType 在 CommonAnnotationBeanPostProcessor 的构造方法中就已经被初始化了
-				// destroyAnnotationType = PreDestroy.class
+				// ★★★ destroyAnnotationType = PreDestroy.class
 				if (this.destroyAnnotationType != null && method.isAnnotationPresent(this.destroyAnnotationType)) {
 					currDestroyMethods.add(new LifecycleElement(method));
 					if (logger.isTraceEnabled()) {
@@ -230,6 +236,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 		}
 		while (targetClass != null && targetClass != Object.class);
 
+		// ★★★ LifecycleMetadata 类封装了 initMethods 和 destroyMethods
 		return new LifecycleMetadata(clazz, initMethods, destroyMethods);
 	}
 

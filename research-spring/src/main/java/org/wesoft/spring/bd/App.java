@@ -1,9 +1,7 @@
 package org.wesoft.spring.bd;
 
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.ChildBeanDefinition;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.beans.factory.support.*;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.wesoft.spring.bd.bean.IndexService;
 import org.wesoft.spring.bd.bean.UserService;
@@ -33,6 +31,10 @@ public class App {
 		//
 		// ac.registerBeanDefinition("indexService", cbd);
 
+		// AbstractBeanDefinition beanDefinition = BeanDefinitionBuilder.genericBeanDefinition().getBeanDefinition();
+		// beanDefinition.setLazyInit(false);
+		// beanDefinition.setScope(GenericBeanDefinition.SCOPE_SINGLETON);
+		// beanDefinition.setBeanClass(UserService.class);
 
 		GenericBeanDefinition rbd = new GenericBeanDefinition();
 		rbd.setLazyInit(false);
@@ -46,7 +48,6 @@ public class App {
 		cbd.setBeanClass(IndexService.class);
 
 		ac.registerBeanDefinition("indexService", cbd);
-
 
 		ac.refresh();
 

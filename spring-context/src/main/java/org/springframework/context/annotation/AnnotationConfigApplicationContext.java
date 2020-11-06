@@ -103,6 +103,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
 		// 调用无参构造方法
+		// this.reader = new AnnotatedBeanDefinitionReader(this); 同时还会将 Spring 所需要的一些内部的（必须的重要的）BD 放到 beanDefinitionMap 中
+		// this.scanner = new ClassPathBeanDefinitionScanner(this); 创建一个扫描器
 		this();
 		// setAllowCircularReferences(false);
 		// 注册配置类，因为配置类需要解析，一般不需要自己扫描
